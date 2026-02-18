@@ -89,6 +89,11 @@ using namespace vex;
 
 // Begin project code
 
+
+motor_group MotorGroup17 = motor_group(MotorGroup17MotorA, MotorGroup17MotorB);
+
+
+
 void preAutonomous(void) {
   // actions to do when the program starts
   Brain.Screen.clearScreen();
