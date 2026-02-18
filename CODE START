@@ -90,10 +90,89 @@ using namespace vex;
 // Begin project code
 
 
-motor_group MotorGroup17 = motor_group(MotorGroup17MotorA, MotorGroup17MotorB);
+// setting up Ports/Motors and names
 
+controller Control = controller(primary);
 
+motor_group LMDT = motor_group(LMDT1, LMDT2, LMDT3);
+motor_group RMDT = motor_group(RMDT1, RMDT2, RMDT3);
 
+double WS = 200; //Wheel Size
+double TW = 295; // Track Width and it stands for width from middle of left wheel to right wheel
+double WB = 40; //Wheel Base and it is center of front wheel to center of back wheel
+double GR = 1; // Gear Ratio 
+
+drivetrain Drivetrain = drivetrain(LMDT, RMDT, WS, TW, WB, mm, GR);
+
+bool RemoteControlCodeEnabled = true;
+
+bool LMDTMoving = false;
+bool RMDTMoving = false;
+
+int arcadeDriving() {
+
+  //The reason why this is here is just to control everything 
+  while(true) {
+    if(RemoteControlCodeEnabled) {
+      
+      // This shows the speed for drive and turn 
+      // left = Axis3 + Axis1
+      // right = Axis3 - Axis1
+
+      int LDTS = Control.Axis3.position() + Control.Axis1.position();
+
+      int RDTS = Control.Axis3.position() - Control.Axis1.position();
+      
+      // Stops accedental drift
+
+      if (LDTS < 5 && LDTS > -5) {
+
+        // checks if LMDT is stopped 
+
+        if (LMDTMoving) {
+          // Stop's LMDT
+
+          LMDT.stop();
+          // tells the code LMDT is stopeed
+
+          LMDTMoving = false;
+        }
+      } else {
+        // tells code LMDT is runnig 
+        LMDTMoving = true;
+      }
+      // check if the value is inside of the deadband range
+      if (RDTS < 5 && RDTS > -5) {
+        // check if the right motor has already been stopped
+        if (RMDTMoving) {
+          // stop the right drive motor
+          RMDT.stop();
+          // tell the code that the right motor has been stopped
+          RMDTMoving = false;
+        }
+      } else {
+        // reset the toggle so that the deadband code knows to stop the right motor next time the input is in the deadband range
+        RMDTMoving = true;
+      }
+      
+      // only tell the left drive motor to spin if the values are not in the deadband range
+      if (LMDTMoving) {
+        LMDT.setVelocity(LDTS, percent);
+        LMDT.spin(forward);
+      }
+      // only tell the right drive motor to spin if the values are not in the deadband range
+      if (RMDTMoving) {
+        RMDT.setVelocity(RDTS, percent);
+        RMDT.spin(forward);
+      }
+    }
+    // wait before repeating the process
+    wait(20, msec);
+  }
+  return 0;
+}
+
+task aracdeDriving (arcadeDriving);
 void preAutonomous(void) {
   // actions to do when the program starts
   Brain.Screen.clearScreen();
@@ -104,7 +183,12 @@ void preAutonomous(void) {
 void autonomous(void) {
   Brain.Screen.clearScreen();
   Brain.Screen.print("autonomous code");
+  //Turn of control so the code is constant and doesn't change volocity 
+  RemoteControlCodeEnabled = false;
+
   // place automonous code here
+
+
 }
 
 void userControl(void) {
